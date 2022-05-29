@@ -7,3 +7,6 @@ https://www.kaggle.com/datasets/aibuzz/predict-the-genetic-disorders-datasetof-g
 
 Programming Language:  R 
 
+Team Members: Sindhu Bhattarai, Dave Friesen, Emma Oo
+
+Class:  ADS503_Applied_Predictive_Modeling (University of San Diego) 
