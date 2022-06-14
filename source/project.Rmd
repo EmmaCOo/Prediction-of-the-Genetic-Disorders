@@ -1,0 +1,79 @@
+---
+title: "Predicting Genetic Disorders"
+author:
+  Emma Oo^[University of San Diego, eoo@sandiego.edu], Sindhu Bhattarai^[University of San Diego, sbhattarai@sandiego.edu], Dave Friesen^[University of San Diego, dfriesen@sandiego.edu]
+date: "06/27/2022"
+geometry: "left=2cm,right=2cm,top=2cm,bottom=2cm"
+output:
+  html_document:
+    css: "style.css"
+  pdf_document: default
+---
+
+<style>
+.main-container {
+  max-width: 1024px;
+}
+</style>
+
+
+### Objective and Hypothesis
+
+
+```{r setup, echo = FALSE, message = FALSE}
+# Load R libraries
+
+# Expand output width and minimize exp notation
+options(width = 110)
+options(scipen = 100)
+options(digits = 4)
+
+# Set style defaults
+knitr::opts_chunk$set(fig.width = 5, fig.height = (5 * .7))
+```
+
+
+### Data Acquisition and Validation
+
+```{r data_acquisition}
+# Load datasets
+gd_train_df <- read.csv("../data/train_genetic_disorders.csv", header = TRUE)
+gd_test_df <- read.csv("../data/test_genetic_disorders.csv", header = TRUE)
+
+# Data validation and understanding, including structure, content, and statistical characteristics covered below
+```
+
+#### Data (Sample) Characteristics (including variable types, formats, and names)
+#### Categorical Variables
+
+
+### Data Splitting
+
+
+### Data Cleaning (and reduction)
+
+#### Zero/Near-Zero Variances
+#### Missing Values
+#### Duplicate Values
+#### "Noisy" Data
+
+
+### Data Transformation
+
+#### Centering/Scaling (standardizing/normalizing)
+#### Statistical Characteristics (including distribution, skewness, outliers)
+#### Class Imbalances
+#### Other Feature Engineering (transformation, aggregation, enrichment)
+
+
+### Multivariate Analysis (and reduction)
+
+#### Collinearity and Dependencies
+#### Predictor Transformations (e.g., PCA)
+
+
+### Modeling
+
+#### Feature Selection
+#### Training, Testing (validating), and Evaluation (iteration n)
+#### Optimization, Tuning, Selection
