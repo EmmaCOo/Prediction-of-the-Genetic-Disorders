@@ -33,9 +33,9 @@ knitr::opts_chunk$set(fig.width = 5, fig.height = (5 * .7))
 ```
 
 
-### Data Acquisition and Validation
+### Data Load and Validation
 
-```{r data_acquisition}
+```{r data_load}
 # Load datasets
 gd_train_df <- read.csv("../data/train_genetic_disorders.csv", header = TRUE)
 gd_test_df <- read.csv("../data/test_genetic_disorders.csv", header = TRUE)
@@ -44,36 +44,110 @@ gd_test_df <- read.csv("../data/test_genetic_disorders.csv", header = TRUE)
 ```
 
 #### Data (Sample) Characteristics (including variable types, formats, and names)
+
+```{r data_chacteristics}
+#
+```
+
 #### Categorical Variables
+
+```{r categorical_variables}
+#
+```
 
 
 ### Data Splitting
+
+```{r data_splitting}
+#
+```
 
 
 ### Data Cleaning (and reduction)
 
 #### Zero/Near-Zero Variances
+
+```{r near_zero_z_variances}
+#
+```
+
 #### Missing Values
+
+```{r missing_values}
+#
+```
+
 #### Duplicate Values
+
+```{r duplicate_values}
+#
+```
+
 #### "Noisy" Data
+
+```{r noisy_data}
+#
+```
 
 
 ### Data Transformation
 
 #### Centering/Scaling (standardizing/normalizing)
+
+```{r centering_scaling}
+#
+```
+
 #### Statistical Characteristics (including distribution, skewness, outliers)
+
+```{r statistical_characteristics}
+#
+```
+
 #### Class Imbalances
+
+```{r class_imbalances}
+#
+```
+
 #### Other Feature Engineering (transformation, aggregation, enrichment)
+
+```{r other_feature_engineering}
+#
+```
 
 
 ### Multivariate Analysis (and reduction)
 
 #### Collinearity and Dependencies
+
+```{r collinearity_and_dependencies}
+#
+```
+
 #### Predictor Transformations (e.g., PCA)
+
+```{r predictor_transformations}
+#
+```
 
 
 ### Modeling
 
 #### Feature Selection
+
+```{r feature_selection}
+#
+```
+
 #### Training, Testing (validating), and Evaluation (iteration n)
+
+```{r training_testing_evaluation}
+#
+```
+
 #### Optimization, Tuning, Selection
+
+```{r optimization_tuning_selection}
+#
+```
