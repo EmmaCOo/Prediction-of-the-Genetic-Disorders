@@ -439,92 +439,377 @@ pre code {
 </style>
 <div id="objective-and-hypothesis" class="section level3">
 <h3>Objective and Hypothesis</h3>
+<div id="section" class="section level5">
+<h5>[. . .]</h5>
+</div>
 </div>
 <div id="data-load-and-validation" class="section level3">
 <h3>Data Load and Validation</h3>
-<pre class="r"><code># Load datasets
-gd_train_df &lt;- read.csv(&quot;../data/train_genetic_disorders.csv&quot;, header = TRUE)
-gd_test_df &lt;- read.csv(&quot;../data/test_genetic_disorders.csv&quot;, header = TRUE)
+<pre class="r source"><code># Load dataset(s)
+gd_df &lt;- read.csv(&quot;../data/train_genetic_disorders.csv&quot;, header = TRUE)
 
 # Data validation and understanding, including structure, content, and statistical characteristics covered below</code></pre>
-<div id="data-sample-characteristics-including-variable-types-formats-and-names" class="section level4">
-<h4>Data (Sample) Characteristics (including variable types, formats,
-and names)</h4>
-<pre class="r"><code>#</code></pre>
+<div id="data-structure-review" class="section level6">
+<h6>Data Structure Review</h6>
+<pre class="r source"><code># Summarize base dataset and [optionally] sample rows
+str(gd_df)</code></pre>
+<pre class="output"><code>&#39;data.frame&#39;:   22083 obs. of  45 variables:
+ $ Patient.Id                                      : chr  &quot;PID0x6418&quot; &quot;PID0x25d5&quot; &quot;PID0x4a82&quot; &quot;PID0x4ac8&quot; ...
+ $ Patient.Age                                     : int  2 4 6 12 11 14 3 3 11 4 ...
+ $ Genes.in.mother.s.side                          : chr  &quot;Yes&quot; &quot;Yes&quot; &quot;Yes&quot; &quot;Yes&quot; ...
+ $ Inherited.from.father                           : chr  &quot;No&quot; &quot;Yes&quot; &quot;No&quot; &quot;No&quot; ...
+ $ Maternal.gene                                   : chr  &quot;Yes&quot; &quot;No&quot; &quot;No&quot; &quot;Yes&quot; ...
+ $ Paternal.gene                                   : chr  &quot;No&quot; &quot;No&quot; &quot;No&quot; &quot;No&quot; ...
+ $ Blood.cell.count..mcL.                          : num  4.76 4.91 4.89 4.71 4.72 ...
+ $ Patient.First.Name                              : chr  &quot;Richard&quot; &quot;Mike&quot; &quot;Kimberly&quot; &quot;Jeffery&quot; ...
+ $ Family.Name                                     : chr  &quot;&quot; &quot;&quot; &quot;&quot; &quot;Hoelscher&quot; ...
+ $ Father.s.name                                   : chr  &quot;Larre&quot; &quot;Brycen&quot; &quot;Nashon&quot; &quot;Aayaan&quot; ...
+ $ Mother.s.age                                    : int  NA NA 41 21 32 NA NA 40 45 44 ...
+ $ Father.s.age                                    : int  NA 23 22 NA NA NA 63 NA 44 42 ...
+ $ Institute.Name                                  : chr  &quot;Boston Specialty &amp; Rehabilitation Hospital&quot; &quot;St. Margaret&#39;s Hospital For Women&quot; &quot;&quot; &quot;&quot; ...
+ $ Location.of.Institute                           : chr  &quot;55 FRUIT ST\nCENTRAL, MA 02114\n(42.36247485742686, -71.06924724545246)&quot; &quot;1515 COMMONWEALTH AV\nALLSTON/BRIGHTON, MA 02135\n(42.34665771451756, -71.14136122385321)&quot; &quot;-&quot; &quot;55 FRUIT ST\nCENTRAL, MA 02114\n(42.36247485742686, -71.06924724545246)&quot; ...
+ $ Status                                          : chr  &quot;Alive&quot; &quot;Deceased&quot; &quot;Alive&quot; &quot;Deceased&quot; ...
+ $ Respiratory.Rate..breaths.min.                  : chr  &quot;Normal (30-60)&quot; &quot;Tachypnea&quot; &quot;Normal (30-60)&quot; &quot;Tachypnea&quot; ...
+ $ Heart.Rate..rates.min                           : chr  &quot;Normal&quot; &quot;Normal&quot; &quot;Tachycardia&quot; &quot;Normal&quot; ...
+ $ Test.1                                          : int  0 NA 0 0 0 0 NA 0 0 0 ...
+ $ Test.2                                          : int  NA 0 0 0 0 0 0 0 0 0 ...
+ $ Test.3                                          : int  NA 0 0 0 0 0 0 NA 0 0 ...
+ $ Test.4                                          : int  1 1 1 1 1 1 1 1 1 1 ...
+ $ Test.5                                          : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ Parental.consent                                : chr  &quot;Yes&quot; &quot;Yes&quot; &quot;Yes&quot; &quot;Yes&quot; ...
+ $ Follow.up                                       : chr  &quot;High&quot; &quot;High&quot; &quot;Low&quot; &quot;High&quot; ...
+ $ Gender                                          : chr  &quot;&quot; &quot;&quot; &quot;&quot; &quot;Male&quot; ...
+ $ Birth.asphyxia                                  : chr  &quot;&quot; &quot;No&quot; &quot;No record&quot; &quot;Not available&quot; ...
+ $ Autopsy.shows.birth.defect..if.applicable.      : chr  &quot;Not applicable&quot; &quot;None&quot; &quot;Not applicable&quot; &quot;No&quot; ...
+ $ Place.of.birth                                  : chr  &quot;Institute&quot; &quot;&quot; &quot;&quot; &quot;Institute&quot; ...
+ $ Folic.acid.details..peri.conceptional.          : chr  &quot;No&quot; &quot;Yes&quot; &quot;Yes&quot; &quot;No&quot; ...
+ $ H.O.serious.maternal.illness                    : chr  &quot;&quot; &quot;Yes&quot; &quot;No&quot; &quot;Yes&quot; ...
+ $ H.O.radiation.exposure..x.ray.                  : chr  &quot;No&quot; &quot;Not applicable&quot; &quot;Yes&quot; &quot;-&quot; ...
+ $ H.O.substance.abuse                             : chr  &quot;No&quot; &quot;Not applicable&quot; &quot;&quot; &quot;Not applicable&quot; ...
+ $ Assisted.conception.IVF.ART                     : chr  &quot;No&quot; &quot;No&quot; &quot;Yes&quot; &quot;&quot; ...
+ $ History.of.anomalies.in.previous.pregnancies    : chr  &quot;Yes&quot; &quot;Yes&quot; &quot;Yes&quot; &quot;Yes&quot; ...
+ $ No..of.previous.abortion                        : int  NA NA 4 1 4 0 3 1 0 1 ...
+ $ Birth.defects                                   : chr  &quot;&quot; &quot;Multiple&quot; &quot;Singular&quot; &quot;Singular&quot; ...
+ $ White.Blood.cell.count..thousand.per.microliter.: num  9.86 5.52 NA 7.92 4.1 ...
+ $ Blood.test.result                               : chr  &quot;&quot; &quot;normal&quot; &quot;normal&quot; &quot;inconclusive&quot; ...
+ $ Symptom.1                                       : int  1 1 0 0 0 1 0 0 1 0 ...
+ $ Symptom.2                                       : int  1 NA 1 0 0 0 0 0 1 0 ...
+ $ Symptom.3                                       : int  1 1 1 1 0 0 0 1 1 1 ...
+ $ Symptom.4                                       : int  1 1 1 0 0 1 0 NA 0 1 ...
+ $ Symptom.5                                       : int  1 0 1 0 NA 0 0 0 1 1 ...
+ $ Genetic.Disorder                                : chr  &quot;Mitochondrial genetic inheritance disorders&quot; &quot;&quot; &quot;Multifactorial genetic inheritance disorders&quot; &quot;Mitochondrial genetic inheritance disorders&quot; ...
+ $ Disorder.Subclass                               : chr  &quot;Leber&#39;s hereditary optic neuropathy&quot; &quot;Cystic fibrosis&quot; &quot;Diabetes&quot; &quot;Leigh syndrome&quot; ...</code></pre>
+<pre class="r source"><code>#head(gd_df, 3)</code></pre>
 </div>
-<div id="categorical-variables" class="section level4">
-<h4>Categorical Variables</h4>
-<pre class="r"><code>#</code></pre>
+<div id="preliminary-feature-reduction-clearly-na-to-objective-and-hypothesis" class="section level6">
+<h6>Preliminary Feature Reduction (clearly n/a to Objective and
+Hypothesis)</h6>
+<pre class="r source"><code># Define n/a columns and subset dataframe; Note retaining &quot;some&quot; informational variables like &quot;Institute.Name&quot; for
+#   possible descriptive analytic purposes
+drop_cols &lt;- c(&quot;Patient.First.Name&quot;,
+               &quot;Family.Name&quot;,
+               &quot;Father.s.name&quot;,
+               &quot;Institute.Name&quot;,
+               &quot;Location.of.Institute&quot;)
+gd_df &lt;- gd_df[ , !(names(gd_df) %in% drop_cols)]</code></pre>
+</div>
+<div id="class-target-and-label-review" class="section level6">
+<h6>Class Target and Label Review</h6>
+<pre class="r source"><code># Check for missing labels; set aside where missing
+missing_target &lt;- which(is.na(gd_df$Disorder.Subclass) | (gd_df$Disorder.Subclass == &quot;&quot;))
+cat(&quot;Rows pre-subset for missing labels: &quot;, format(nrow(gd_df), format = &quot;d&quot;, big.mark = &quot;,&quot;), sep = &quot;&quot;)</code></pre>
+<pre class="output"><code>Rows pre-subset for missing labels: 22,083</code></pre>
+<pre class="r source"><code>gd_hold_df &lt;- gd_df[missing_target, ]
+gd_df &lt;- gd_df[-missing_target, ]
+cat(&quot;Held rows with missing labels: &quot;, format(nrow(gd_hold_df), format = &quot;d&quot;, big.mark = &quot;,&quot;), sep = &quot;&quot;)</code></pre>
+<pre class="output"><code>Held rows with missing labels: 3,140</code></pre>
+<pre class="r source"><code>cat(&quot;Net rows (labeled): &quot;, format(nrow(gd_df), format = &quot;d&quot;, big.mark = &quot;,&quot;), sep = &quot;&quot;)</code></pre>
+<pre class="output"><code>Net rows (labeled): 18,943</code></pre>
+<pre class="r source"><code># Show frequency distribution for [prospective] target class(es)
+show_frequency &lt;- function(desc, c) {
+  t &lt;- as.data.frame(prop.table(table(c)))
+  colnames(t) &lt;- c(&quot;Class&quot;, &quot;Frequency&quot;)
+  cat(desc, &quot;\n&quot;); print(t[order(-t$Freq, t$Class), 1:2], row.names = FALSE)
+}
+show_frequency(&quot;Pre-Split Frequency Distribution&quot;, gd_df$Disorder.Subclass)</code></pre>
+<pre class="output"><code>Pre-Split Frequency Distribution 
+                               Class Frequency
+                      Leigh syndrome     0.258
+              Mitochondrial myopathy     0.222
+                     Cystic fibrosis     0.173
+                           Tay-Sachs     0.142
+                            Diabetes     0.092
+                     Hemochromatosis     0.068
+ Leber&#39;s hereditary optic neuropathy     0.032
+                         Alzheimer&#39;s     0.008
+                              Cancer     0.005</code></pre>
+<pre class="r source"><code># Move the target class to &quot;top&quot; of dataframe so column removals don&#39;t impact
+gd_df &lt;- gd_df[ , c(ncol(gd_df), 1:(ncol(gd_df) - 1))]
+target_col = 1</code></pre>
 </div>
 </div>
 <div id="data-splitting" class="section level3">
 <h3>Data Splitting</h3>
-<pre class="r"><code>#</code></pre>
+<pre class="r source"><code># Split data 80/20 train/test, using caret&#39;s inherent stratified split to compensate for class imbalance
+set.seed(1)
+train_rows &lt;- createDataPartition(gd_df$Disorder.Subclass, times = 1, p = 0.80, list = FALSE)
+train_df &lt;- gd_df[train_rows, ]
+test_df &lt;- gd_df[-train_rows, ]
+show_frequency(&quot;Post-Split Frequency Distribution (Train)&quot;, train_df$Disorder.Subclass)</code></pre>
+<pre class="output"><code>Post-Split Frequency Distribution (Train) 
+                               Class Frequency
+                      Leigh syndrome     0.258
+              Mitochondrial myopathy     0.222
+                     Cystic fibrosis     0.173
+                           Tay-Sachs     0.142
+                            Diabetes     0.092
+                     Hemochromatosis     0.068
+ Leber&#39;s hereditary optic neuropathy     0.032
+                         Alzheimer&#39;s     0.008
+                              Cancer     0.005</code></pre>
 </div>
 <div id="data-cleaning-and-reduction" class="section level3">
 <h3>Data Cleaning (and reduction)</h3>
-<div id="zeronear-zero-variances" class="section level4">
-<h4>Zero/Near-Zero Variances</h4>
-<pre class="r"><code>#</code></pre>
+<div id="data-sample-characteristic-review-for-pre-processing" class="section level6">
+<h6>Data (Sample) Characteristic Review for Pre-Processing</h6>
+<p>(Suppressing custom code for simplicity)</p>
+<pre class="r source"><code># Generate a summary (cursory) view of base dataset for initial understanding and pre-processing direction
+univariate(train_df)</code></pre>
+<pre class="output"><code>Summary Univariate Analysis (15,158 observations)
+                     Type          NA BlankZ  Unique     Min     Max    Mean  Median Outlier&lt; &gt;Outlier Kurtosis Skewness
+Disorder.Subclass    character                     9                                                                    
+Patient.Id           character                15,158                                                                    
+Patient.Age          integer       6%     6%      15              14               7    No      Yes       0.017   -1.211
+Genes.in.mother.s... character                     2                                                                    
+Inherited.from.fa... character            1%       3                                                                    
+Maternal.gene        character           12%       3                                                                    
+Paternal.gene        character                     2                                                                    
+Blood.cell.count.... numeric                  15,158   4.093   5.610   4.900   4.902    No      Yes      -0.011   -0.037
+Mother.s.age         integer      26%             34      18      51              35    No      Yes      -0.006   -1.219
+Father.s.age         integer      25%             45      20      64              42    No      Yes      -0.002   -1.210
+Status               character                     2                                                                    
+Respiratory.Rate.... character            9%       3                                                                    
+Heart.Rate..rates... character            9%       3                                                                    
+Test.1               integer       9%    90%       1                                    No       No                     
+Test.2               integer       9%    90%       1                                    No       No                     
+Test.3               integer       9%    90%       1                                    No       No                     
+Test.4               integer       9%              1       1       1               1    No       No                     
+Test.5               integer       9%    90%       1                                    No       No                     
+Parental.consent     character            9%       2                                                                    
+Follow.up            character            9%       3                                                                    
+Gender               character            9%       4                                                                    
+Birth.asphyxia       character            9%       5                                                                    
+Autopsy.shows.bir... character            4%       5                                                                    
+Place.of.birth       character            9%       3                                                                    
+Folic.acid.detail... character            9%       3                                                                    
+H.O.serious.mater... character            8%       3                                                                    
+H.O.radiation.exp... character            9%       5                                                                    
+H.O.substance.abuse  character            9%       5                                                                    
+Assisted.concepti... character            9%       3                                                                    
+History.of.anomal... character            9%       3                                                                    
+No..of.previous.a... integer       9%    18%       5               4               2    No      Yes       0.001   -1.292
+Birth.defects        character            9%       3                                                                    
+White.Blood.cell.... numeric       9%         11,858   3.000  12.000   7.460   7.443    No      Yes       0.020   -0.979
+Blood.test.result    character            9%       5                                                                    
+Symptom.1            integer       9%    37%       2               1               1    No      Yes      -0.369   -1.864
+Symptom.2            integer       9%    40%       2               1               1    No      Yes      -0.197   -1.961
+Symptom.3            integer       8%    41%       2               1               1    No      Yes      -0.166   -1.973
+Symptom.4            integer       9%    45%       2               1                    No      Yes       0.010   -2.000
+Symptom.5            integer       9%    48%       2               1                    No      Yes       0.146   -1.979
+Genetic.Disorder     character            9%       4                                                                    </code></pre>
 </div>
-<div id="missing-values" class="section level4">
-<h4>Missing Values</h4>
-<pre class="r"><code>#</code></pre>
+<div id="missing-values" class="section level6">
+<h6>Missing Values</h6>
+<pre class="r source"><code># Genes.in.mother.s.side, Paternal.gene, Blood.cell.count..mcL., Status - n/a
+
+# Impute basic integer values with medians
+medianf &lt;- function(x) {
+ result &lt;- median(x, na.rm = TRUE)
+ if (is.integer(x))
+   result &lt;- as.integer(result)
+ return(result)
+}
+median_cols = c(&quot;Patient.Age&quot;, &quot;Mother.s.age&quot;, &quot;Father.s.age&quot;, &quot;No..of.previous.abortion&quot;)
+for (n in median_cols) {
+  train_df[n][is.na(train_df[n])] &lt;- apply(train_df[n], 2, medianf)
+  test_df[n][is.na(test_df[n])] &lt;- apply(test_df[n], 2, medianf)
+}
+                                           
+# Impute categorical blanks with common &quot;notprovided&quot;; note we could also impute these with categorical mode,
+#   or most frequent categorical value of each column using the cmode() function below
+cols_tofill &lt;- c(&quot;Inherited.from.father&quot;,
+                 &quot;Maternal.gene&quot;,
+                 &quot;Respiratory.Rate..breaths.min.&quot;,
+                 &quot;Heart.Rate..rates.min&quot;,
+                 &quot;Parental.consent&quot;,
+                 &quot;Follow.up&quot;,
+                 &quot;Gender&quot;,
+                 &quot;Birth.asphyxia&quot;,
+                 &quot;Autopsy.shows.birth.defect..if.applicable.&quot;,
+                 &quot;Place.of.birth&quot;,
+                 &quot;Folic.acid.details..peri.conceptional.&quot;,
+                 &quot;H.O.serious.maternal.illness&quot;,
+                 &quot;H.O.radiation.exposure..x.ray.&quot;,
+                 &quot;H.O.substance.abuse&quot;,
+                 &quot;Assisted.conception.IVF.ART&quot;,
+                 &quot;History.of.anomalies.in.previous.pregnancies&quot;,
+                 &quot;Birth.defects&quot;,
+                 &quot;Blood.test.result&quot;)
+train_df[cols_tofill][train_df[cols_tofill] == &quot;&quot;] &lt;- &quot;notprovided&quot;
+test_df[cols_tofill][test_df[cols_tofill] == &quot;&quot;] &lt;- &quot;notprovided&quot;
+
+cmode &lt;- function(x) {
+  uniqx &lt;- unique(na.omit(x))
+  uniqx[which.max(tabulate(match(x, uniqx)))]
+}
+
+# Impute what appear to be masked &quot;flag&quot; columns iwth placeholder -1 values. . .
+flag_cols &lt;- c(&quot;Test.1&quot;, &quot;Test.2&quot;, &quot;Test.3&quot;, &quot;Test.4&quot;, &quot;Test.5&quot;,
+               &quot;Symptom.1&quot;, &quot;Symptom.2&quot;, &quot;Symptom.3&quot;, &quot;Symptom.4&quot;, &quot;Symptom.5&quot;)
+train_df[flag_cols][is.na(train_df[flag_cols])] &lt;- as.integer(-1)
+test_df[flag_cols][is.na(test_df[flag_cols])] &lt;- as.integer(-1)
+
+# Impute mean for one numeric column
+train_df$White.Blood.cell.count..thousand.per.microliter.[is.na(train_df$White.Blood.cell.count..thousand.per.microliter.)] &lt;-
+  mean(train_df$White.Blood.cell.count..thousand.per.microliter., na.rm = TRUE)
+test_df$White.Blood.cell.count..thousand.per.microliter.[is.na(test_df$White.Blood.cell.count..thousand.per.microliter.)] &lt;-
+  mean(test_df$White.Blood.cell.count..thousand.per.microliter., na.rm = TRUE)
+
+# Note not using knnImpute for the limited number of numerical [prospective] features given that it
+#   centers/scales, which is illogical for the values in this dataset
+#pp &lt;- preProcess(train_df[ , -target_col, drop = FALSE], method = &quot;knnImpute&quot;, k = 10)
+#train_df[ , -target_col] &lt;- predict(pp, train_df[ , -target_col, drop = FALSE])
+#test_df[ , -target_col] &lt;- predict(pp, test_df[ , -target_col, drop = FALSE])
+
+# Last on the list: Genetic.Disorder - we&#39;re not classifying to this but it is relevant/informational as a
+#   superclass to the target Disorder.Subclass and shuold ultimately be imputed using similar Disorder.Subclass
+#   observations which do have valid Genetic.Disorder values</code></pre>
 </div>
-<div id="duplicate-values" class="section level4">
-<h4>Duplicate Values</h4>
-<pre class="r"><code>#</code></pre>
+<div id="feature-updates-including-variable-typesformats-names" class="section level6">
+<h6>Feature Updates (including variable types/formats, names)</h6>
+<pre class="r source"><code># Re-type variables
+factor_cols &lt;- c(&quot;Genes.in.mother.s.side&quot;,
+                 &quot;Inherited.from.father&quot;,
+                 &quot;Maternal.gene&quot;,
+                 &quot;Paternal.gene&quot;,
+                 &quot;Status&quot;,
+                 &quot;Respiratory.Rate..breaths.min.&quot;,
+                 &quot;Heart.Rate..rates.min&quot;,
+                 &quot;Parental.consent&quot;,
+                 &quot;Follow.up&quot;,
+                 &quot;Gender&quot;,
+                 &quot;Birth.asphyxia&quot;,
+                 &quot;Autopsy.shows.birth.defect..if.applicable.&quot;,
+                 &quot;Folic.acid.details..peri.conceptional.&quot;,
+                 &quot;H.O.serious.maternal.illness&quot;,
+                 &quot;H.O.radiation.exposure..x.ray.&quot;,
+                 &quot;H.O.substance.abuse&quot;,
+                 &quot;Assisted.conception.IVF.ART&quot;,
+                 &quot;History.of.anomalies.in.previous.pregnancies&quot;,
+                 &quot;Birth.defects&quot;,
+                 &quot;Blood.test.result&quot;,
+                 &quot;Disorder.Subclass&quot;)
+train_df[factor_cols] &lt;- lapply(train_df[factor_cols], factor)
+test_df[factor_cols] &lt;- lapply(test_df[factor_cols], factor)
+# Note dummy variables may be introduced below for e.g., logistic regression
+
+# Simplify variable naming
+# [TBD]
+
+# Generate updated summary of base dataset
+univariate(train_df)</code></pre>
+<pre class="output"><code>Summary Univariate Analysis (15,158 observations)
+                     Type          NA BlankZ  Unique     Min     Max    Mean  Median Outlier&lt; &gt;Outlier Kurtosis Skewness
+Disorder.Subclass    factor                        9                                                                    
+Patient.Id           character                15,158                                                                    
+Patient.Age          integer              6%      15              14               7    No      Yes       0.016   -1.090
+Genes.in.mother.s... factor                        2                                                                    
+Inherited.from.fa... factor                        3                                                                    
+Maternal.gene        factor                        3                                                                    
+Paternal.gene        factor                        2                                                                    
+Blood.cell.count.... numeric                  15,158   4.093   5.610   4.900   4.902    No      Yes      -0.011   -0.037
+Mother.s.age         integer                      34      18      51              35    No      Yes      -0.048   -0.593
+Father.s.age         integer                      45      20      64              42    No      Yes      -0.007   -0.600
+Status               factor                        2                                                                    
+Respiratory.Rate.... factor                        3                                                                    
+Heart.Rate..rates... factor                        3                                                                    
+Test.1               integer             90%       2      -1                            No       No      -2.786    5.762
+Test.2               integer             90%       2      -1                           Yes       No      -2.791    5.792
+Test.3               integer             90%       2      -1                           Yes       No      -2.851    6.130
+Test.4               integer                       2      -1       1               1    No       No      -2.798    5.829
+Test.5               integer             90%       2      -1                            No       No      -2.799    5.837
+Parental.consent     factor                        2                                                                    
+Follow.up            factor                        3                                                                    
+Gender               factor                        4                                                                    
+Birth.asphyxia       factor                        5                                                                    
+Autopsy.shows.bir... factor                        5                                                                    
+Place.of.birth       character                     3                                                                    
+Folic.acid.detail... factor                        3                                                                    
+H.O.serious.mater... factor                        3                                                                    
+H.O.radiation.exp... factor                        5                                                                    
+H.O.substance.abuse  factor                        5                                                                    
+Assisted.concepti... factor                        3                                                                    
+History.of.anomal... factor                        3                                                                    
+No..of.previous.a... integer             18%       5               4               2    No      Yes               -1.116
+Birth.defects        factor                        3                                                                    
+White.Blood.cell.... numeric                  11,859   3.000  12.000   7.460   7.460    No      Yes       0.021   -0.768
+Blood.test.result    factor                        5                                                                    
+Symptom.1            integer             37%       3      -1       1               1    No      Yes      -0.769   -0.496
+Symptom.2            integer             40%       3      -1       1                    No      Yes      -0.643   -0.624
+Symptom.3            integer             41%       3      -1       1                    No      Yes      -0.626   -0.613
+Symptom.4            integer             45%       3      -1       1                    No      Yes      -0.502   -0.679
+Symptom.5            integer             48%       3      -1       1                    No      Yes      -0.413   -0.702
+Genetic.Disorder     character            9%       4                                                                    </code></pre>
 </div>
-<div id="noisy-data" class="section level4">
-<h4>“Noisy” Data</h4>
-<pre class="r"><code>#</code></pre>
+<div id="zeronear-zero-variances" class="section level6">
+<h6>Zero/Near-Zero Variances</h6>
+<pre class="r source"><code># n/a for this dataset</code></pre>
+</div>
+<div id="duplicate-values" class="section level6">
+<h6>Duplicate Values</h6>
+<pre class="r source"><code># n/a for this dataset</code></pre>
+</div>
+<div id="noisy-data" class="section level6">
+<h6>“Noisy” Data</h6>
+<pre class="r source"><code># n/a for this dataset</code></pre>
 </div>
 </div>
 <div id="data-transformation" class="section level3">
 <h3>Data Transformation</h3>
-<div id="centeringscaling-standardizingnormalizing" class="section level4">
-<h4>Centering/Scaling (standardizing/normalizing)</h4>
-<pre class="r"><code>#</code></pre>
+<div id="centeringscaling-standardizingnormalizing" class="section level6">
+<h6>Centering/Scaling (standardizing/normalizing)</h6>
+<pre class="r source"><code># n/a for this dataset?</code></pre>
 </div>
-<div id="statistical-characteristics-including-distribution-skewness-outliers" class="section level4">
-<h4>Statistical Characteristics (including distribution, skewness,
-outliers)</h4>
-<pre class="r"><code>#</code></pre>
+<div id="statistical-characteristics-including-distribution-skewness-outliers" class="section level6">
+<h6>Statistical Characteristics (including distribution, skewness,
+outliers)</h6>
+<pre class="r source"><code>#summary(train_df)</code></pre>
 </div>
-<div id="class-imbalances" class="section level4">
-<h4>Class Imbalances</h4>
-<pre class="r"><code>#</code></pre>
-</div>
-<div id="other-feature-engineering-transformation-aggregation-enrichment" class="section level4">
-<h4>Other Feature Engineering (transformation, aggregation,
-enrichment)</h4>
-<pre class="r"><code>#</code></pre>
+<div id="other-feature-engineering-transformation-aggregation-enrichment" class="section level6">
+<h6>Other Feature Engineering (transformation, aggregation,
+enrichment)</h6>
+<pre class="r source"><code># n/a for this dataset?</code></pre>
 </div>
 </div>
 <div id="multivariate-analysis-and-reduction" class="section level3">
 <h3>Multivariate Analysis (and reduction)</h3>
-<div id="collinearity-and-dependencies" class="section level4">
-<h4>Collinearity and Dependencies</h4>
-<pre class="r"><code>#</code></pre>
+<div id="collinearity-and-dependencies" class="section level6">
+<h6>Collinearity and Dependencies</h6>
 </div>
-<div id="predictor-transformations-e.g.-pca" class="section level4">
-<h4>Predictor Transformations (e.g., PCA)</h4>
-<pre class="r"><code>#</code></pre>
+<div id="predictor-transformations-e.g.-pca" class="section level6">
+<h6>Predictor Transformations (e.g., PCA)</h6>
 </div>
 </div>
 <div id="modeling" class="section level3">
 <h3>Modeling</h3>
-<div id="feature-selection" class="section level4">
-<h4>Feature Selection</h4>
-<pre class="r"><code>#</code></pre>
+<div id="feature-selection" class="section level6">
+<h6>Feature Selection</h6>
 </div>
-<div id="training-testing-validating-and-evaluation-iteration-n" class="section level4">
-<h4>Training, Testing (validating), and Evaluation (iteration n)</h4>
-<pre class="r"><code>#</code></pre>
+<div id="training-testing-validating-and-evaluation-iteration-n" class="section level6">
+<h6>Training, Testing (validating), and Evaluation (iteration n)</h6>
 </div>
-<div id="optimization-tuning-selection" class="section level4">
-<h4>Optimization, Tuning, Selection</h4>
-<pre class="r"><code>#</code></pre>
+<div id="optimization-tuning-selection" class="section level6">
+<h6>Optimization, Tuning, Selection</h6>
 </div>
 </div>
 <div class="footnotes footnotes-end-of-document">
