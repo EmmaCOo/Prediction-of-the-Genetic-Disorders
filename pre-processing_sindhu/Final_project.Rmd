@@ -1,0 +1,219 @@
+---
+title: "Final Project"
+author: "Sindhu Bhattarai"
+date: "6/12/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning= FALSE, tidy= TRUE, comment= ">", message = FALSE)
+```
+
+### Data Loading 
+
+```{r }
+train_genetic = read.csv(file="/Users/sakshyamdahal/Desktop/MS_Data_Science/Applied Predictive Modeling/Final project/train_genetic_disorders.csv", header= TRUE)
+```
+
+
+```{r}
+df <- train_genetic
+#head(df,5)
+dim(df)
+```
+
+### Initial feature reduction
+
+Uninformative Feature Reduced
+
+```{r}
+#drop unecessary columns
+drop_col <- c("Patient.Id","Patient.First.Name","Father.s.name","Institute.Name", "Location.of.Institute" , "Family.Name", "Parental.consent", "Status", "Place.of.birth","Test.1", "Test.2", "Test.3","Test.4","Test.5")
+df <- df[!(names(df) %in% drop_col)]
+#names(df)
+dim(df)
+```
+
+
+### Missing value in target vector.
+
+```{r}
+#unique(df$Disorder.Subclass)
+miss_value_target <- which(is.na(df$Disorder.Subclass) | (df$Disorder.Subclass == ""))
+length(miss_value_target)
+```
+
+### Excuding data points where our target has missing value. 
+
+```{r}
+df <- df[-miss_value_target,]
+
+dim(df)
+```
+
+### Check for class imbalance 
+
+```{r}
+prop.table(table(df$Disorder.Subclass))
+
+```
+
+### Split the dataframe as per the disorder.subclass vector
+
+**There is certain class imbalance problem. We will split the data frame using createDataPartition function using target class(Disorder.Subclass) which helps us to get even balance of all classes in both train and test data**
+
+```{r}
+set.seed(100)
+library(caret)
+train_row <- createDataPartition(df$Disorder.Subclass, p = .80, list = FALSE)
+
+train_df <- df[train_row,]
+test_df <- df[-train_row,]
+
+dim(df)
+
+dim(train_df)
+
+dim(test_df)
+
+```
+
+```{r}
+prop.table(table(train_df$Disorder.Subclass))
+```
+
+**We can see here no difference in the proportion of classes after split 
+
+```{r}
+#lapply(train_df, unique)
+
+```
+
+### Checking and handling missing values for train data
+```{r}
+#changing ambiguous values from the data to na.
+library(caret)
+library(dplyr)
+library(questionr)
+train_df[train_df == ""] <- NA
+test_df[test_df == ""] <- NA
+
+train_df[train_df == "-"] <- NA
+test_df[test_df == "-"] <- NA
+
+#not chaninging not applicable to na as I think it itself is a class
+#df[df == "Not applicable"] <- NA
+
+train_df[ train_df == "Not available"] <- NA
+test_df[ test_df == "Not available"] <- NA
+
+train_df[train_df == "No record"] <- NA
+test_df[test_df == "No record"] <- NA
+
+
+train_df[train_df == "None"] <- "No"
+test_df[test_df == "None"] <- "No"
+
+
+freq.na(train_df)
+sum(is.na(train_df))
+```
+
+### Droping the columns with high missing value 
+
+The imputaion in more than 50% of missing data might hamper our model.
+
+```{r}
+#drop Birth.asphyxia   column as 57% of data missing and imputation might create inaccurate model prediction
+#dim(train_df)
+train_df <- subset(train_df, select = -c(Birth.asphyxia))
+dim(train_df)
+```
+
+```{r}
+test_df <-  subset(test_df, select = -c(Birth.asphyxia))
+dim(test_df)
+```
+
+```{r}
+str(train_df)
+```
+
+### Identifying the dtypes and changing into suitable dtypes. 
+
+1. Numeric vectors are mostly acceptable by all models. There are 11 numeric vectors in the data. 
+2. Vectors in string/character needs to be converted into factor for running smooth model. 19 character vectors are converted into factors.  
+
+```{r}
+#subsetting numeric columns and character for handling missing values and 
+library(dplyr)
+# Subset numeric columns with dplyr
+train_numeric <- select_if(train_df, is.numeric)
+test_numeric <- select_if(test_df, is.numeric)
+
+# Subset categorical columns with dplyr
+train_categorical <- select_if(train_df,is.character)
+test_categorical <- select_if(test_df,is.character)
+
+dim(train_numeric)
+dim(train_categorical)
+
+dim(test_numeric)
+dim(test_categorical)
+
+```
+
+```{r}
+lapply(train_categorical, unique)
+```
+
+
+```{r}
+#convert all character columns to factor
+df_factor_train <- as.data.frame(unclass(train_categorical), stringsAsFactors = TRUE)
+df_factor_test <- as.data.frame(unclass(test_categorical), stringsAsFactors = TRUE)
+
+str(df_factor_train)
+```
+
+```{r}
+#merge the tranformed dataframe with numeric vectors data
+train_df_transformed= cbind(train_numeric,df_factor_train)
+test_df_transformed= cbind(test_numeric,df_factor_test)
+
+str(train_df_transformed)
+```
+
+### Mice imputation: MICE is a multiple imputation method used to replace missing data values in a data set under certain assumptions about the data missingness mechanism (e.g., the data are missing at random, the data are missing completely at random).
+
+```{r}
+# mice imputation 
+library(mice)
+set.seed(100)
+train_df_imputed <- mice(train_df_transformed, m=5, maxit = 3, method = 'pmm')
+test_df_imputed <- mice(test_df_transformed, m=5, maxit = 3, method = 'pmm')
+
+```
+
+
+```{r}
+set.seed(100)
+train_df_imputed <- complete(train_df_imputed,3)
+test_df_imputed <- complete(test_df_imputed,3)
+
+
+sum(is.na(train_df_imputed))
+
+sum(is.na(test_df_imputed))
+```
+
+
+### EDA
+
+
+
+
+
+
+
+
