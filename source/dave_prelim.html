@@ -787,7 +787,7 @@ enrichment)</h6>
 <h3>Multivariate Analysis (and reduction)</h3>
 <div id="collinearity-and-dependencies" class="section level6">
 <h6>Collinearity and Dependencies</h6>
-<pre class="r source"><code># Calculate &quot;measure of association&quot; between nominal factor variables
+<pre class="r source"><code># Calculate Cramer&#39;s V &quot;measure of association&quot; between nominal factor variables (uses Chi-square statistic)
 cscorr &lt;- PairApply(train_df[ , sapply(train_df, is.factor)], CramerV, symmetric = TRUE)
 
 # Shorten variable names for ease of reviewing output matrix
