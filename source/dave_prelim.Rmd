@@ -36,7 +36,7 @@ options(digits = 1)
 # Set style defaults
 knitr::opts_chunk$set(class.source = "source")
 knitr::opts_chunk$set(class.output = "output")
-knitr::opts_chunk$set(fig.width = 5, fig.height = (5 * .7), fig.align = "center")
+knitr::opts_chunk$set(fig.width = 6.5, fig.height = (6.5 * .7), fig.align = "center")
 knitr::opts_chunk$set(warning = FALSE)
 knitr::opts_chunk$set(message = FALSE)
 knitr::opts_chunk$set(comment = NA)
@@ -67,11 +67,20 @@ str(gd_df)
 ```{r prelim_feature_reduction}
 # Define n/a columns and subset dataframe; Note retaining "some" informational variables like "Institute.Name" for
 #   possible descriptive analytic purposes
-drop_cols <- c("Patient.First.Name",
+drop_cols <- c("Patient.Id",
+               "Patient.First.Name",
                "Family.Name",
                "Father.s.name",
                "Institute.Name",
-               "Location.of.Institute")
+               "Location.of.Institute",
+               "Status",
+               "Test.1",
+               "Test.2",
+               "Test.3",
+               "Test.4",
+               "Test.5",
+               "Parental.consent",
+               "Place.of.birth")
 gd_df <- gd_df[ , !(names(gd_df) %in% drop_cols)]
 ```
 
@@ -237,12 +246,10 @@ cols_tofill <- c("Inherited.from.father",
                  "Maternal.gene",
                  "Respiratory.Rate..breaths.min.",
                  "Heart.Rate..rates.min",
-                 "Parental.consent",
                  "Follow.up",
                  "Gender",
                  "Birth.asphyxia",
                  "Autopsy.shows.birth.defect..if.applicable.",
-                 "Place.of.birth",
                  "Folic.acid.details..peri.conceptional.",
                  "H.O.serious.maternal.illness",
                  "H.O.radiation.exposure..x.ray.",
@@ -260,8 +267,7 @@ cmode <- function(x) {
 }
 
 # Impute what appear to be masked "flag" columns iwth placeholder -1 values. . .
-flag_cols <- c("Test.1", "Test.2", "Test.3", "Test.4", "Test.5",
-               "Symptom.1", "Symptom.2", "Symptom.3", "Symptom.4", "Symptom.5")
+flag_cols <- c("Symptom.1", "Symptom.2", "Symptom.3", "Symptom.4", "Symptom.5")
 train_df[flag_cols][is.na(train_df[flag_cols])] <- as.integer(-1)
 test_df[flag_cols][is.na(test_df[flag_cols])] <- as.integer(-1)
 
@@ -291,10 +297,8 @@ factor_cols <- c("Genes.in.mother.s.side",
                  "Inherited.from.father",
                  "Maternal.gene",
                  "Paternal.gene",
-                 "Status",
                  "Respiratory.Rate..breaths.min.",
                  "Heart.Rate..rates.min",
-                 "Parental.consent",
                  "Follow.up",
                  "Gender",
                  "Birth.asphyxia",
@@ -371,6 +375,21 @@ univariate(train_df)
 ###### Collinearity and Dependencies
 
 ```{r collinearity_and_dependencies}
+# Calculate Cramer's V "measure of association" between nominal factor variables (uses Chi-square statistic)
+cscorr <- PairApply(train_df[ , sapply(train_df, is.factor)], CramerV, symmetric = TRUE)
+
+# Shorten variable names for ease of reviewing output matrix
+rn <- rownames(cscorr)
+for (n in 1:length(rownames(cscorr))) {
+  rn[n] <- paste(rownames(cscorr)[n], " (", AscToChar(64 + n), ")", sep = "")
+  rownames(cscorr)[n] <- paste(AscToChar(64 + n))
+}
+for (n in 1:length(colnames(cscorr)))
+  colnames(cscorr)[n] <- paste(AscToChar(64 + n))
+
+# Show master list of variable names along with output ("correlation") matrix
+cat(rn, sep = "\n")
+cscorr
 ```
 
 
@@ -391,14 +410,16 @@ univariate(train_df)
 
 ###### Training, Testing (validating), and Evaluation (iteration n)
 
-```{r training_testing_evaluation}
-# Create common control for models and set predictor set
+```{r training_testing_evaluation, eval = FALSE}
+# Create common control for models
 set.seed(1)
 fit_control <- trainControl(method = "cv",
                             number = 10,
                             savePredictions = "all",
                             classProbs = TRUE,
                             summaryFunction = multiClassSummary)
+
+# Select predictors (features) for lr model
 predictor_cols <- c("Genes.in.mother.s.side",
                     "Inherited.from.father",
                     "Maternal.gene",
@@ -411,20 +432,12 @@ predictor_cols <- c("Genes.in.mother.s.side",
 #Blood.cell.count..mcL.
 #Mother.s.age
 #Father.s.age
-#Status
 #Respiratory.Rate..breaths.min.
 #Heart.Rate..rates.min
-#Test.1
-#Test.2
-#Test.3
-#Test.4
-#Test.5
-#Parental.consent
 #Follow.up
 #Gender
 #Birth.asphyxia
 #Autopsy.shows.birth.defect..if.applicable.
-#Place.of.birth
 #Folic.acid.details..peri.conceptional.
 #H.O.serious.maternal.illness
 #H.O.radiation.exposure..x.ray.
