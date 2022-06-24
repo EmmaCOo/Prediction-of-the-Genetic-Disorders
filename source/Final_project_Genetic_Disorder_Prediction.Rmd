@@ -1,0 +1,547 @@
+---
+title: "Predicting Genetic Disorders"
+author:
+  Emma Oo^[University of San Diego, eoo@sandiego.edu], Sindhu Bhattarai^[University of San Diego, sbhattarai@sandiego.edu], Dave Friesen^[University of San Diego, dfriesen@sandiego.edu]
+date: "06/27/2022"
+geometry: "left=2cm,right=2cm,top=2cm,bottom=2cm"
+output: rmarkdown::html_vignette
+---
+
+```{r setup, echo = FALSE, message = FALSE}
+# Load R libraries
+library(caret)
+library(DescTools)
+library(e1071)
+
+# Expand output width and minimize exp notation
+options(width = 150)
+options(scipen = 100)
+options(digits = 1)
+
+# Set style defaults
+knitr::opts_chunk$set(class.source = "source")
+knitr::opts_chunk$set(class.output = "output")
+knitr::opts_chunk$set(fig.width = 6.5, fig.height = (6.5 * .7), fig.align = "center")
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(comment = NA)
+```
+
+### Data Load and Validation
+
+```{r }
+options(digits=10)
+
+cnames <- c('Patient.Id', 'Age', 'mom_gene', 'inh_dad', 'mat_gene', 'pat_gene','cell_count','Patient.First.Name','Family.Name','Father.s.name','mom_age','dad_age','Institute.Name','Location.of.Institute','status', 'resp_rate','heart_rate','Test.1','Test.2','Test.3','Test.4','Test.5','Parental.consent','Follow.up', 'Gender', 'Birth.asphyxia','birth_defect','Place.of.birth','Folic_acid','maternal.illness','radiation_expo', 'substance_abuse','IVF', 'prev_anomalities', 'prev_abortion', 'Birth_defects', 'WBC', 'blood_result', 'Symptom_1','Symptom_2', 'Symptom_3','Symptom_4','Symptom_5', 'disorder','subclass')
+            
+  
+gd_df = read.csv(file="/Users/emmaoo/Desktop/train.csv", header= TRUE, col.names = cnames)
+#dim(gd_df)
+head(gd_df)
+```
+
+
+###### Data Structure Review
+
+```{r data_structure}
+# Summarize base dataset and [optionally] sample rows
+str(gd_df)
+#head(gd_df, 3)
+```
+
+
+###### Initial feature reduction
+
+Uninformative Feature Reduced
+
+```{r prelim_feature_reduction}
+# Define n/a columns and subset dataframe; Note retaining "some" informational variables like "Institute.Name" for
+#   possible descriptive analytic purposes
+drop_cols <- c("Patient.Id",
+               "Patient.First.Name",
+               "Family.Name",
+               "Father.s.name",
+               "Institute.Name",
+               "Location.of.Institute",
+               "status",
+               "Test.1",
+               "Test.2",
+               "Test.3",
+               "Test.4",
+               "Test.5",
+               "Parental.consent",
+               "Place.of.birth")
+gd_df <- gd_df[ , !(names(gd_df) %in% drop_cols)]
+
+dim(gd_df)
+```
+
+###### Class Target and Label Review
+
+```{r class_target_label_review}
+# Check for missing labels; set aside where missing
+missing_target <- which(is.na(gd_df$subclass) | (gd_df$subclass == ""))
+cat("Rows pre-subset for missing labels: ", format(nrow(gd_df), format = "d", big.mark = ","), sep = "")
+
+gd_hold_df <- gd_df[missing_target, ]
+gd_df <- gd_df[-missing_target, ]
+
+cat(" deleted rows with missing labels: ", format(nrow(gd_hold_df), format = "d", big.mark = ","), sep = "")
+
+cat(" Remaining rows (labeled): ", format(nrow(gd_df), format = "d", big.mark = ","), sep = "")
+```
+
+
+```{r frequency_target_class_review}
+# Show frequency distribution for [prospective] target class(es)
+show_frequency <- function(desc, c) {
+  t <- as.data.frame(prop.table(table(c)))
+  colnames(t) <- c("Class", "Frequency")
+  cat(desc, "\n"); print(t[order(-t$Freq, t$Class), 1:2], row.names = FALSE)
+}
+show_frequency("Pre-Split Frequency Distribution", gd_df$subclass)
+
+# Move the target class to "top" of dataframe so column removals don't impact
+gd_df <- gd_df[ , c(ncol(gd_df), 1:(ncol(gd_df) - 1))]
+target_col = 1
+
+
+gd_df$subclass <- gsub("'", "", gd_df$subclass, fixed = TRUE)
+gd_df$subclass <- gsub(" ", ".", gd_df$subclass, fixed = TRUE)
+gd_df$subclass <- gsub("-", ".", gd_df$subclass, fixed = TRUE)
+
+```
+
+
+### Data Partition 
+
+###### Split the dataframe as per target class (Disorder.Subclass vector)
+
+**There is certain class imbalance problem. We will split the data frame using createDataPartition function using target class(Disorder.Subclass) which helps us to get even balance of all classes in both train and test data**
+
+```{r data_splitting}
+# Split data 80/20 train/test, using caret's inherent stratified split to compensate for class imbalance
+set.seed(1)
+train_index <- createDataPartition(gd_df$subclass, times = 1, p = 0.80, list = FALSE)
+train_df <- gd_df[train_index, ]
+test_df <- gd_df[-train_index, ]
+show_frequency("Post-Split Frequency Distribution (Train)", train_df$subclass)
+```
+
+### Handling Missing Values
+
+###### Checking  Mislabeled Data and  Missing Values
+
+```{r mislabeled_data}
+library(dplyr)
+library(questionr)
+
+#lapply(train_df, unique)
+
+# changing values which are labeled as not available and no record to a readable format 'NA'
+train_df[ train_df == "Not available"] <- NA
+test_df[ test_df == "Not available"] <- NA
+
+train_df[train_df == "No record"] <- NA
+test_df[test_df == "No record"] <- NA
+
+#changing None to "No" (there is None in one vector "Autopsy.shows.birth.defect..if.applicable." where none birth defects resemble no class)
+train_df[train_df == "None"] <- "No"
+test_df[test_df == "None"] <- "No"
+
+
+freq.na(train_df)
+sum(is.na(train_df))
+```
+
+**Note:We will be removing  "Birth.asphyxia" vector from our data as there is 46% missing data. Here, the imputation might create bias model.Further,we will be performing median imputation for integer vectors. For categorical vectors we will be encoding the missing value as "not provided". Here we can also do mode imputation but we would like to learn if the missing value has any relation with target. For numeric vectors we will be applying mean imputation.** 
+
+```{r missing_values}
+train_df <- subset(train_df, select = -c(Birth.asphyxia))
+test_df <- subset(test_df, select = -c(Birth.asphyxia))
+
+# Impute basic integer values with medians
+
+medianf <- function(x) {
+ result <- median(x, na.rm = TRUE)
+ if (is.integer(x))
+   result <- as.integer(result)
+ return(result)
+}
+median_cols = c("Age", "mom_age", "dad_age", "prev_abortion")
+for (n in median_cols) {
+  train_df[n][is.na(train_df[n])] <- apply(train_df[n], 2, medianf)
+  test_df[n][is.na(test_df[n])] <- apply(test_df[n], 2, medianf)
+}
+                                           
+# Impute categorical blanks with common "notprovided"; note we could also impute these with categorical mode,
+#   or most frequent categorical value of each column using the cmode() function below
+cols_tofill <- c("inh_dad",
+                 "mat_gene",
+                 "pat_gene",
+                 "resp_rate",
+                 "heart_rate",
+                 "Follow.up",
+                 "Gender",
+                 "birth_defect",
+                 "Folic_acid",
+                 "maternal.illness",
+                 "radiation_expo",
+                 "substance_abuse",
+                 "IVF",
+                 "prev_anomalities",
+                 "Birth_defects",
+                 "blood_result",
+                 "disorder" )
+
+train_df[cols_tofill][train_df[cols_tofill] == ""] <- "notprovided"
+test_df[cols_tofill][test_df[cols_tofill] == ""] <- "notprovided"
+
+train_df[cols_tofill][train_df[cols_tofill] == "-"] <- "notprovided"
+test_df[cols_tofill][test_df[cols_tofill] == "-"] <- "notprovided"
+
+
+cmode <- function(x) {
+  uniqx <- unique(na.omit(x))
+  uniqx[which.max(tabulate(match(x, uniqx)))]
+}
+
+# Impute what appear to be masked "flag" columns iwth placeholder -1 values. . .
+flag_cols <- c("Symptom_1", "Symptom_2", "Symptom_3", "Symptom_4", "Symptom_5")
+train_df[flag_cols][is.na(train_df[flag_cols])] <- as.integer(-1)
+test_df[flag_cols][is.na(test_df[flag_cols])] <- as.integer(-1)
+
+# Impute mean for one numeric column
+train_df$WBC[is.na(train_df$WBC)] <-mean(train_df$WBC, na.rm = TRUE)
+test_df$WBC[is.na(test_df$WBC)] <-mean(test_df$WBC, na.rm = TRUE)
+
+```
+
+
+
+```{r}
+lapply(train_df, unique)
+```
+
+### Pre-processing
+
+###### Feature Pre-processing (including variable types/formats, names)
+
+```{r feature_updates}
+# preprocess variables
+factor_cols <- c("mom_gene",
+                 "inh_dad",
+                 "mat_gene",
+                 "pat_gene",
+                 "resp_rate",
+                 "heart_rate",
+                 "Follow.up",
+                 "Gender",
+                 "birth_defect",
+                 "Folic_acid",
+                 "maternal.illness",
+                 "radiation_expo",
+                 "substance_abuse",
+                 "IVF",
+                 "prev_anomalities",
+                 "Birth_defects",
+                 "blood_result",
+                 "subclass",
+                 "disorder")
+
+train_df[factor_cols] <- lapply(train_df[factor_cols], factor)
+test_df[factor_cols] <- lapply(test_df[factor_cols], factor)
+# Note factors can be changed in dummy variables for better performances while in modeling.
+
+# Generate updated summary of base dataset
+str(train_df)
+```
+
+###### Collinearity and Dependencies
+
+```{r collinearity_and_dependencies}
+# Calculate Cramer's V "measure of association" between nominal factor variables (uses Chi-square statistic)
+cscorr <- PairApply(train_df[ , sapply(train_df, is.factor)], CramerV, symmetric = TRUE)
+
+# Shorten variable names for ease of reviewing output matrix
+rn <- rownames(cscorr)
+for (n in 1:length(rownames(cscorr))) {
+  rn[n] <- paste(rownames(cscorr)[n], " (", AscToChar(64 + n), ")", sep = "")
+  rownames(cscorr)[n] <- paste(AscToChar(64 + n))
+}
+for (n in 1:length(colnames(cscorr)))
+  colnames(cscorr)[n] <- paste(AscToChar(64 + n))
+
+# Show master list of variable names along with output ("correlation") matrix
+cat(rn, sep = "\n")
+cscorr
+```
+
+### Exploratory Data Analysis(EDA)
+
+```{r}
+dim(train_df)
+```
+
+###### Outlier detection
+
+```{r Boxplots}
+par(mar=c(10,2,1,1))
+boxplot(train_df, las=2, col = c("turquoise","skyblue"))
+```
+
+**Note: Our data looks good on as there seems to be no outliers in the data.**
+
+###### Frequency distribution
+
+```{r Histogram}
+pred_for_hist <- train_df[,2:29]
+pred_for_hist <- pred_for_hist %>% mutate_if(is.character, as.numeric)
+pred_for_hist <- pred_for_hist %>% mutate_if(is.factor, as.numeric)
+par(mfrow = c(3, 3))
+
+for (i in 1:ncol(pred_for_hist)) {
+  hist(pred_for_hist[ ,i], xlab = names(pred_for_hist[i]), main = paste(names(pred_for_hist[i]), "Histogram"), col="blue")  
+}
+```
+
+
+###### Relation with target based on our hypothesis that the maternal and paternal genes might be cause of transmission of the genetic diorders. 
+
+```{r}
+library(ggplot2)
+#install.packages("patchwork")
+#install.packages("cowplot")
+
+library(patchwork)
+library(cowplot)
+p1 <- ggplot(train_df, aes(x = train_df$Age, fill = train_df$subclass)) +geom_bar() + theme_classic()+scale_fill_hue(c=60, l=80)
+p2 <- ggplot(train_df, aes(x = train_df$mat_gene, fill = train_df$subclass)) +geom_bar() +theme_classic()+ scale_fill_hue(c=60, l=80)
+p3 <- ggplot(train_df, aes(x = train_df$pat_gene, fill = train_df$subclass)) +geom_bar() +theme_classic()+ scale_fill_hue(c=60, l=80)
+
+p1+p2/p3
+```
+
+
+### Modeling
+
+###### Assigning target and Predictors
+
+```{r}
+
+#test train before dummy 
+train_x <- train_df[,2:29]
+train_y <- train_df[,1]
+
+test_x <- test_df[,2:29]
+test_y <- test_df[,1]
+
+dim(train_x)
+dim(test_x)
+
+```
+
+```{r}
+#subsetting numeric columns and character for changing categorical into dummy
+library(dplyr)
+# Subset numeric columns with dplyr
+
+numeric_pred_train <- select_if(train_x, is.numeric)
+numeric_pred_test<- select_if(test_x, is.numeric)
+
+# Subset categorical columns with dplyr
+cat_pred_train <- select_if(train_x,is.factor)
+cat_pred_test <- select_if(test_x,is.factor)
+
+dim(numeric_pred_train)
+dim(numeric_pred_test)
+
+dim(cat_pred_train)
+dim(cat_pred_test)
+
+```
+
+```{r}
+#encode to dummy
+library(lattice)
+dummies <- dummyVars(~ ., data=cat_pred_train[,1:17])
+dummy_cat_df <- predict(dummies, cat_pred_train[,1:17])
+
+dummies_test <- dummyVars(~ ., data=cat_pred_test[,1:17])
+dummy_cat_df_test<- predict(dummies, cat_pred_test[,1:17])
+
+#ready to model train test 
+train_x<- as.data.frame(cbind(numeric_pred_train, dummy_cat_df))
+train_y <- as.factor(train_y)
+
+test_x<- as.data.frame(cbind(numeric_pred_test, dummy_cat_df_test))
+test_y <- as.factor(test_y)
+
+```
+
+
+### Models
+
+**Setting control function for our multiclass classification**
+
+```{r}
+ctrl <- trainControl(method = "cv",
+                     summaryFunction = multiClassSummary,
+                     classProbs = TRUE,
+                     savePredictions = TRUE)
+
+```
+
+##### LDA
+
+```{r}
+library(MASS)
+
+set.seed(476)
+ldaFit <- train(x =train_x, 
+                y = train_y,
+                method = "lda",
+                preProc = c("center","scale"),
+                metric = "ROC",
+                trControl = ctrl)
+
+lda_pred <- predict(ldaFit,train_x)
+
+cm_lda = confusionMatrix(lda_pred, as.factor(train_y))
+cm_lda
+```
+
+
+##### Logistic regression 
+
+
+```{r}
+set.seed(476)
+lrFit <- train(x = train_x, 
+              y = train_y,method = "multinom",metric = "ROC",trControl = ctrl)
+
+lrCM <- confusionMatrix(lrFit, norm = "none")
+lrCM
+
+```
+
+
+##### Nearest shrunken Centroids
+
+```{r NSC}
+
+set.seed(476)
+nscFit <- train(x = train_x, 
+                y = as.factor(train_y),
+                method = "pam",
+                preProc = c("center", "scale"),
+                tuneGrid = data.frame(threshold = seq(0, 25, length = 30)),
+                metric = "ROC",
+                trControl = ctrl)
+#nscFit
+
+nscCM <- confusionMatrix(nscFit, norm = "none")
+nscCM
+```
+
+
+
+##### Random Forest
+
+```{r}
+library(randomForest)
+
+set.seed(476)
+rf_fit <- randomForest(train_x,train_y,tuneLength = 30,importance=TRUE)
+
+rf_pred <- predict(rf_fit,train_x)
+cm_rf = confusionMatrix(rf_pred, as.factor(train_y))
+cm_rf
+```
+
+
+##### Bagged trees
+
+```{r}
+bag_fit <- train(train_x, 
+                   train_y,
+                   method="treebag",
+                   trControl=ctrl,
+                   importance=TRUE)
+
+cm_bagfit = confusionMatrix(bag_fit, norm = "none")
+cm_bagfit
+```
+
+
+##### KNN
+
+```{r knn}
+
+set.seed(476)
+knnFit <- train(x = train_x, 
+                y = train_y,
+                method = "knn",
+                metric = "ROC",
+                trControl = ctrl)
+
+
+knnCM <- confusionMatrix(knnFit, norm = "none")
+knnCM
+
+```
+### Accuracy for TEST data set
+```{r}
+print ("Logistic Regression")
+lr_pred_test <- predict(lrFit,test_x)
+cm_lr_test = confusionMatrix(lr_pred_test, as.factor(test_y))
+cm_lr_test
+
+print ("Nearest Shrunken Centroids")
+nsc_pred_test <- predict(nscFit,test_x)
+cm_nsc_test = confusionMatrix(nsc_pred_test, as.factor(test_y))
+cm_nsc_test
+
+print ("Random Forest")
+rf_pred_test <- predict(rf_fit,test_x)
+cm_rf_test = confusionMatrix(rf_pred_test, as.factor(test_y))
+cm_rf_test
+
+print ("Bagged Trees")
+bag_pred_test <- predict(bag_fit,test_x)
+cm_bag_test = confusionMatrix(bag_pred_test, as.factor(test_y))
+cm_bag_test
+
+print("KNN")
+knn_pred_test <- predict(knnFit,test_x)
+cm_knn_test = confusionMatrix(knn_pred_test, as.factor(test_y))
+cm_knn_test
+```
+
+### ROC plots  (NEEDS TO ADD THE CODES)
+
+### Confusion Matrix TABLE (NEEDS TO ADD THE CODES)
+
+
+### Top Ten Important Predictors for the optimal model
+
+```{r}
+library(dbplyr)
+library(ggeasy)
+
+V <- varImp(rf_fit)
+topV <- head(V,10)  #selecting only top 10 important predictors
+
+
+ggplot2::ggplot(topV, top = 10, aes(x=reorder(rownames(topV),Overall), y=Overall)) +
+geom_point( color="blue", size=3, alpha=0.6)+
+geom_segment( aes(x=rownames(topV), xend=rownames(topV), y=0, yend=Overall), 
+color='blue') +
+ggtitle("Top Ten Important Predictors") +
+xlab('Predictors')+
+ylab('Overall Importance')+
+theme_classic() +
+coord_flip()+
+ggeasy::easy_center_title() 
+
+```
