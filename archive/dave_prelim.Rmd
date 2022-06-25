@@ -27,6 +27,9 @@ output:
 library(caret)
 library(DescTools)
 library(e1071)
+library(ggplot2)
+library(pROC)
+library(randomForest)
 
 # Expand output width and minimize exp notation
 options(width = 150)
@@ -108,14 +111,10 @@ show_frequency("Pre-Split Frequency Distribution", gd_df$Disorder.Subclass)
 gd_df <- gd_df[ , c(ncol(gd_df), 1:(ncol(gd_df) - 1))]
 target_col = 1
 
-
-
+# Clean (prelim) target class values
 gd_df$Disorder.Subclass <- gsub("'", "", gd_df$Disorder.Subclass, fixed = TRUE)
 gd_df$Disorder.Subclass <- gsub(" ", ".", gd_df$Disorder.Subclass, fixed = TRUE)
 gd_df$Disorder.Subclass <- gsub("-", ".", gd_df$Disorder.Subclass, fixed = TRUE)
-
-
-
 ```
 
 
@@ -293,7 +292,8 @@ test_df$White.Blood.cell.count..thousand.per.microliter.[is.na(test_df$White.Blo
 
 ```{r feature_updates}
 # Re-type variables
-factor_cols <- c("Genes.in.mother.s.side",
+factor_cols <- c("Disorder.Subclass",
+                 "Genes.in.mother.s.side",
                  "Inherited.from.father",
                  "Maternal.gene",
                  "Paternal.gene",
@@ -311,13 +311,45 @@ factor_cols <- c("Genes.in.mother.s.side",
                  "History.of.anomalies.in.previous.pregnancies",
                  "Birth.defects",
                  "Blood.test.result",
-                 "Disorder.Subclass")
+                 "Genetic.Disorder")
 train_df[factor_cols] <- lapply(train_df[factor_cols], factor)
 test_df[factor_cols] <- lapply(test_df[factor_cols], factor)
-# Note dummy variables may be introduced below for e.g., logistic regression
+# Note dummy variables may be introduced below (model-dependent)
 
 # Simplify variable naming
-# [TBD]
+rename_cols <- c("Disorder_Subclass",
+                 "Patient_Age",
+                 "Genes_in_mothers_side",
+                 "Inherited_from_father",
+                 "Maternal_gene",
+                 "Paternal_gene",
+                 "Blood_cell_count_mcL",
+                 "Mothers_age",
+                 "Fathers_age",
+                 "Respiratory_Rate_breaths_min",
+                 "Heart_Rate_min",
+                 "Follow_up",
+                 "Gender",
+                 "Birth_asphyxia",
+                 "Autopsy_shows_birth_defect",
+                 "Folic_acid_details_peri_conceptional",
+                 "HO_serious_maternal_illness",
+                 "HO_radiation_exposure_xray",
+                 "HO_substance_abuse",
+                 "Assisted_conception_IVF_ART",
+                 "History_of_anomalies_in_previous_pregnancies",
+                 "No_of_previous_abortion",
+                 "Birth_defects",
+                 "White_Blood_cell_count_thousand_per_microliter",
+                 "Blood_test_result",
+                 "Symptom_1",
+                 "Symptom_2",
+                 "Symptom_3",
+                 "Symptom_4",
+                 "Symptom_5",
+                 "Genetic_Disorder")
+colnames(train_df) <- rename_cols
+colnames(test_df) <- rename_cols
 
 # Generate updated summary of base dataset
 univariate(train_df)
@@ -351,7 +383,7 @@ univariate(train_df)
 ###### Centering/Scaling (standardizing/normalizing)
 
 ```{r centering_scaling}
-# n/a for this dataset?
+# n/a for this dataset
 ```
 
 
@@ -365,37 +397,7 @@ univariate(train_df)
 ###### Other Feature Engineering (transformation, aggregation, enrichment)
 
 ```{r other_feature_engineering}
-# n/a for this dataset?
-```
-
-
-### Multivariate Analysis (and reduction)
-
-
-###### Collinearity and Dependencies
-
-```{r collinearity_and_dependencies}
-# Calculate Cramer's V "measure of association" between nominal factor variables (uses Chi-square statistic)
-cscorr <- PairApply(train_df[ , sapply(train_df, is.factor)], CramerV, symmetric = TRUE)
-
-# Shorten variable names for ease of reviewing output matrix
-rn <- rownames(cscorr)
-for (n in 1:length(rownames(cscorr))) {
-  rn[n] <- paste(rownames(cscorr)[n], " (", AscToChar(64 + n), ")", sep = "")
-  rownames(cscorr)[n] <- paste(AscToChar(64 + n))
-}
-for (n in 1:length(colnames(cscorr)))
-  colnames(cscorr)[n] <- paste(AscToChar(64 + n))
-
-# Show master list of variable names along with output ("correlation") matrix
-cat(rn, sep = "\n")
-cscorr
-```
-
-
-###### Predictor Transformations (e.g., PCA)
-
-```{r predictor_transformations}
+# n/a for this dataset
 ```
 
 
@@ -408,97 +410,85 @@ cscorr
 ```
 
 
+
+
+
+```{r model_preparation}
+# Convert factors to dummies (retaining non-factors and also keeping the target as a factor)
+dummies <- dummyVars(Disorder_Subclass ~. , data = train_df[ , sapply(train_df, is.factor)])
+train_df <- cbind(Disorder_Subclass = train_df$Disorder_Subclass, train_df[ , !sapply(train_df, is.factor)], data.frame(predict(dummies, newdata = train_df)))
+dummies <- dummyVars(Disorder_Subclass ~. , data = test_df[ , sapply(test_df, is.factor)])
+test_df <- cbind(Disorder_Subclass = test_df$Disorder_Subclass, test_df[ , !sapply(test_df, is.factor)], data.frame(predict(dummies, newdata = test_df)))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ###### Training, Testing (validating), and Evaluation (iteration n)
 
-```{r training_testing_evaluation}
-# Create common control for models
-set.seed(1)
-fit_control <- trainControl(method = "cv",
-                            number = 10,
-                            savePredictions = "all",
-                            classProbs = TRUE,
-                            summaryFunction = multiClassSummary)
 
-# Select predictors (features) for lr model
-predictor_cols <- c("Genes.in.mother.s.side",
-                    "Inherited.from.father",
-                    "Maternal.gene",
-                    "Paternal.gene",
-                    "Mother.s.age",
-                    "Father.s.age",
-                    "History.of.anomalies.in.previous.pregnancies")
-#*Genes.in.mother.s.side
-#*Inherited.from.father
-#*Maternal.gene
-#*Paternal.gene
-#Blood.cell.count..mcL.
-#*Mother.s.age
-#*Father.s.age
-#Respiratory.Rate..breaths.min.
-#Heart.Rate..rates.min
-#Follow.up
-#Gender
-#Birth.asphyxia
-#Autopsy.shows.birth.defect..if.applicable.
-#Folic.acid.details..peri.conceptional.
-#H.O.serious.maternal.illness
-#H.O.radiation.exposure..x.ray.
-#H.O.substance.abuse
-#Assisted.conception.IVF.ART
-#*History.of.anomalies.in.previous.pregnancies
-#No..of.previous.abortion
-#Birth.defects
-#White.Blood.cell.count..thousand.per.microliter.
-#Blood.test.result
-#Symptom.1
-#Symptom.2
-#Symptom.3
-#Symptom.4
-#Symptom.5
-  
-# Train logistic regression model
-invisible(capture.output(
-  lr_fit <- train(x = train_df[ , predictor_cols, drop = FALSE],
-                  y = train_df$Disorder.Subclass,
-                  method = "multinom",
-                  metric = "ROC",
-                  trControl = fit_control)
-))
-#lr_fit
-#lr_fit$finalModel
+```{r rf}
+# Create Random Forest weight vector based on class priors
+priors <- as.list(prop.table(table(train_df$Disorder_Subclass)))
+wts <- data.frame(Disorder_Subclass = train_df$Disorder_Subclass, w = 0.0)
+for (n in 1:length(priors))
+  wts[wts$Disorder_Subclass == names(priors[n]), ]$w <- priors[[n]]
 
-# Generate confusion matrix
-lr_cm <- confusionMatrix(lr_fit, norm = "none")
+# Train the model (using defaults)
+rf_fit <- randomForest(x = train_df,
+                       y = train_df$Disorder_Subclass,
+                       xtest = test_df,
+                       ytest = test_df$Disorder_Subclass,
+                       weights = as.vector(wts$w),
+                       importance = TRUE)
 
 # Simplify class names for more coherent confusion matrix, and output
-for (n in 1:length(rownames(lr_cm$tab)))
-  rownames(lr_cm$table)[n] <- paste(rownames(lr_cm$table)[n], " (", AscToChar(64 + n), ")", sep = "")
-for (n in 1:length(colnames(lr_cm$tab)))
-  colnames(lr_cm$table)[n] <- paste("Class", AscToChar(64 + n))
-lr_cm
+for (n in 1:length(rownames(rf_fit$confusion)))
+  rownames(rf_fit$confusion)[n] <- paste(rownames(rf_fit$confusion)[n], " (", AscToChar(64 + n), ")", sep = "")
+for (n in 1:length(rownames(rf_fit$confusion)))
+  colnames(rf_fit$confusion)[n] <- paste("Class", AscToChar(64 + n))
+for (n in 1:length(rownames(rf_fit$test$confusion)))
+  rownames(rf_fit$test$confusion)[n] <- paste(rownames(rf_fit$test$confusion)[n], " (", AscToChar(64 + n), ")", sep = "")
+for (n in 1:length(rownames(rf_fit$test$confusion)))
+  colnames(rf_fit$test$confusion)[n] <- paste("Class", AscToChar(64 + n))
+rf_fit
 
-# Plot ROC curve
-#lr_roc <- roc(response = lr_fit$pred$obs,
-#              predictor = lr_fit$pred$Yes,
-#              levels = rev(levels(lr_fit$pred$obs)))
-#if (show_output) { plot(lr_roc, legacy.axes = TRUE, main = "LR ROC Curve",
-#                        xlab = "Fall Positive Rate (Specificity)",
-#                        ylab = "True Positive Rate (Sensitivity)") }
-#if (show_output) { lr_roc$auc }
+# Genrate ROC for test results
+rf_roc <- multiclass.roc(response = test_df$Disorder_Subclass,
+                         predictor = as.numeric(rf_fit$test$predicted))
+auc(rf_roc)
 
-# Check for most important predictors
-plot(varImp(lr_fit, scale = FALSE), top = 10, main = "LR Important Predictors")
-varImp(lr_fit)
-
-# Establish test_results dataframe
-test_results <- data.frame(obs = test_df$Disorder.Subclass,
-                           model_2_tbd = 0.0,
-                           model_3_tbd = 0.0,
-                           model_4_tbd = 0.0,
-                           model_5_tbd = 0.0)
-
-# Validate model vs. test data
-test_results$lr <- predict(lr_fit, test_df[ , predictor_cols, drop = FALSE])
+# Plot mulit-class ROC
+rocs <- rf_roc[['rocs']]
+par(pty = "s")
+plot.roc(rocs[[1]], grid = TRUE, legacy.axes = TRUE,
+         main = "Multi-Class ROC", xlab = "False Positive Rate", ylab = "True Positive Rate")
+lines <- sapply(2:length(rocs), function(x) lines.roc(rocs[[x]], col = x))
+dev <- dev.off()
 ```
 
 
