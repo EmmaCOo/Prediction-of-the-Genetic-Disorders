@@ -38,7 +38,7 @@ options(digits = 1)
 # Set style defaults
 knitr::opts_chunk$set(class.source = "source")
 knitr::opts_chunk$set(class.output = "output")
-knitr::opts_chunk$set(fig.width = 6.5, fig.height = (6.5 * .7), fig.align = "center")
+knitr::opts_chunk$set(fig.width = 8.5, fig.height = (8.5 * .7), fig.align = "center")
 knitr::opts_chunk$set(warning = FALSE)
 knitr::opts_chunk$set(message = FALSE)
 knitr::opts_chunk$set(comment = NA)
@@ -59,7 +59,6 @@ knn_eval = TRUE
 ```{r data_load_validation}
 # Load dataset(s)
 gd_df <- read.csv("../data/train_genetic_disorders.csv", header = TRUE)
-#####gd_df = read.csv(file="/Users/emmaoo/Desktop/train.csv", header= TRUE, col.names = cnames)
 
 # Data validation and understanding, including structure, content, and statistical characteristics covered below
 ```
@@ -92,7 +91,9 @@ drop_cols <- c("Patient.Id",
                "Test.4",
                "Test.5",
                "Parental.consent",
-               "Place.of.birth")
+               "Birth.asphyxia",
+               "Place.of.birth",
+               "Genetic.Disorder")
 gd_df <- gd_df[ , !(names(gd_df) %in% drop_cols)]
 ```
 
@@ -254,7 +255,6 @@ cols_tofill <- c("Inherited.from.father",
                  "Heart.Rate..rates.min",
                  "Follow.up",
                  "Gender",
-                 "Birth.asphyxia",
                  "Autopsy.shows.birth.defect..if.applicable.",
                  "Folic.acid.details..peri.conceptional.",
                  "H.O.serious.maternal.illness",
@@ -308,7 +308,6 @@ factor_cols <- c("Disorder.Subclass",
                  "Heart.Rate..rates.min",
                  "Follow.up",
                  "Gender",
-                 "Birth.asphyxia",
                  "Autopsy.shows.birth.defect..if.applicable.",
                  "Folic.acid.details..peri.conceptional.",
                  "H.O.serious.maternal.illness",
@@ -317,8 +316,7 @@ factor_cols <- c("Disorder.Subclass",
                  "Assisted.conception.IVF.ART",
                  "History.of.anomalies.in.previous.pregnancies",
                  "Birth.defects",
-                 "Blood.test.result",
-                 "Genetic.Disorder")
+                 "Blood.test.result")
 train_df[factor_cols] <- lapply(train_df[factor_cols], factor)
 test_df[factor_cols] <- lapply(test_df[factor_cols], factor)
 # Note dummy variables may be introduced below (model-dependent)
@@ -337,7 +335,6 @@ rename_cols <- c("Disorder_Subclass",
                  "Heart_Rate",
                  "Follow_up",
                  "Gender",
-                 "Birth_asphyxia",
                  "Autopsy_birth_defect",
                  "Folic_acid_conceptional",
                  "HO_maternal_illness",
@@ -353,8 +350,7 @@ rename_cols <- c("Disorder_Subclass",
                  "Symptom_2",
                  "Symptom_3",
                  "Symptom_4",
-                 "Symptom_5",
-                 "Genetic_Disorder")
+                 "Symptom_5")
 colnames(train_df) <- rename_cols
 colnames(test_df) <- rename_cols
 ```
@@ -413,7 +409,7 @@ for (i in 1:ncol(pred_for_hist))
 ```{r statistical_outlers}
 # Generate boxplot(s)
 par(mar = c(10, 2, 1, 1))
-boxplot(train_df, las = 2, col = c("turquoise", "skyblue"))
+boxplot(train_df, las = 2, col = c("turquoise", "skyblue"), main = "Distribution and Outlier Review", ylab = "Frequency")
 ```
 
 
@@ -464,6 +460,37 @@ p1 + p2 / p3
 
 
 ### Modeling
+
+
+```{r, eval = FALSE}
+# Optional feature subset for experiment with only gene predictors
+drop_cols <- c("Patient_Age",
+               "Blood_cell_count",
+               "Mothers_age",
+               "Fathers_age",
+               "Respiratory_Rate",
+               "Heart_Rate",
+               "Follow_up",
+               "Gender",
+               "Autopsy_birth_defect",
+               "Folic_acid_conceptional",
+               "HO_maternal_illness",
+               "HO_radiation_exposure",
+               "HO_substance_abuse",
+               "Assisted_conception",
+               "Previous_pregnancies_issues",
+               "Previous_abortions",
+               "Birth_defects",
+               "White_Blood_cell_count",
+               "Blood_test_result",
+               "Symptom_1",
+               "Symptom_2",
+               "Symptom_3",
+               "Symptom_4",
+               "Symptom_5")
+train_df <- train_df[ , !(names(train_df) %in% drop_cols)]
+test_df <- test_df[ , !(names(test_df) %in% drop_cols)]
+```
 
 
 ```{r model_preparation}
@@ -519,7 +546,7 @@ lr_cm
 
 # Check variable importance
 lr_imp <- varImp(lr_fit, scale = FALSE)
-plot(lr_imp, top = 10)
+plot(lr_imp, top = 10, main = "Top 10 Variables")
 ```
 
 
@@ -542,7 +569,7 @@ nsc_cm
 
 # Check variable importance
 nsc_imp <- varImp(nsc_fit, scale = FALSE)
-plot(nsc_imp, top = 10)
+plot(nsc_imp, top = 10, main = "Top 10 Variables")
 ```
 
 
@@ -575,7 +602,7 @@ for (n in 1:length(rownames(rf_fit$test$confusion)))
 
 # Check variable importance
 rf_imp <- varImp(rf_fit, scale = FALSE)
-plot(rf_imp, top = 10)
+plot(rf_imp, top = 10, main = "Top 10 Variables")
 ```
 
 
@@ -595,7 +622,7 @@ cart_cm
 
 # Check variable importance
 cart_imp <- varImp(cart_fit, scale = FALSE)
-plot(cart_imp, top = 10)
+plot(cart_imp, top = 10, main = "Top 10 Variables")
 ```
 
 
@@ -614,7 +641,7 @@ bt_cm
 
 # Check variable importance
 bt_imp <- varImp(bt_fit, scale = FALSE)
-plot(bt_imp, top = 10)
+plot(bt_imp, top = 10, main = "Top 10 Variables")
 ```
 
 
@@ -633,7 +660,7 @@ knn_cm
 
 # Check variable importance
 knn_imp <- varImp(knn_fit, scale = FALSE)
-plot(knn_imp, top = 10)
+plot(knn_imp, top = 10, main = "Top 10 Variables")
 ```
 
 
@@ -691,106 +718,55 @@ if (knn_eval) {
 ```
 
 
-```{r model_validation_roc}
+```{r model_evaluation}
 ## Plot the ROC curve for the hold-out set
-if (lda_eval)
+if (lda_eval) {
   lda_roc <- multiclass.roc(response = test_df$Disorder_Subclass,
                             predictor = order(lda_pred))
+  plot.roc(lda_roc$rocs[[1]], type = "s", col = 'red', legacy.axes = TRUE,
+           main = "Compare ROC Curves for All Models")
+}
 
-if (lr_eval)
+if (lr_eval) {
   lr_roc <- multiclass.roc(response = test_df$Disorder_Subclass,
                            predictor = order(lr_pred))
-#  lr_roc <- multiclass.roc(response = lr_fit$pred$obs,
-#                predictor = lr_fit$pred$Cancer,
-#                levels = rev(levels(lr_fit$pred$obs)))
+  plot.roc(lr_roc$rocs[[1]], type = "s", add = TRUE, col = 'green', legacy.axes = TRUE)
+}
 
-if (nsc_eval)
+if (nsc_eval) {
   nsc_roc <- multiclass.roc(response = test_df$Disorder_Subclass,
                             predictor = order(nsc_pred))
-#  nsc_roc <- multiclass.roc(response = nsc_fit$pred$obs,
-#                predictor = nsc_fit$pred$Cancer,
-#                levels = rev(levels(nsc_fit$pred$obs)))
+  plot.roc(nsc_roc$rocs[[1]], type = "s", add = TRUE, col = 'blue', legacy.axes = TRUE)
+}
 
-if (rf_eval)
+if (rf_eval) {
   rf_roc <- multiclass.roc(response = test_df$Disorder_Subclass,
                            predictor = order(rf_fit$test$predicted))
+  plot.roc(rf_roc$rocs[[1]], type = "s", col = 'orange', add = TRUE, legacy.axes = TRUE)
+  #par(pty = "s")
+  #lines <- sapply(2:length(rocs), function(x) lines.roc(rocs[[x]], col = x))
+  #dev <- dev.off()
+}
 
-if (cart_eval)
+if (cart_eval) {
   cart_roc <- multiclass.roc(response = test_df$Disorder_Subclass,
                              predictor = order(cart_pred))
-#  cart_roc <- multiclass.roc(response = cart_fit$pred$obs,
-#                predictor = cart_fit$pred$Cancer,
-#                levels = rev(levels(cart_fit$pred$obs)))
+  plot.roc(cart_roc$rocs[[1]], type = "s",col = 'black', add = TRUE, legacy.axes = TRUE)
+}
 
-if (bt_eval)
+if (bt_eval) {
   bt_roc <- multiclass.roc(response = test_df$Disorder_Subclass,
                            predictor = order(bt_pred))
-#  bt_roc <- multiclass.roc(response = bt_fit$pred$obs,
-#                predictor = bt_fit$pred$Cancer,
-#                levels = rev(levels(bt_fit$pred$obs)))
-
-if (knn_eval)
-  knn_roc <- multiclass.roc(response = knn_fit$pred$obs,
-               predictor = knn_fit$pred$Cancer,
-            levels = rev(levels(knn_fit$pred$obs)))
-```
-
-
-
-```{r mode_compare}
-### Compare Models using ROC curve
-if (lda_eval)
-  plot.roc(lda_roc$rocs[[1]], type = "s", col = 'red', legacy.axes = TRUE)
-
-if (lr_eval)
-  plot.roc(lr_roc$rocs[[1]], type = "s", add = TRUE, col = 'green', legacy.axes = TRUE)
-
-if (nsc_eval)
-  plot.roc(nsc_roc$rocs[[1]], type = "s", add = TRUE, col = 'blue', legacy.axes = TRUE)
-
-if (rf_eval)
-  plot.roc(rf_roc$rocs[[1]], type = "s", col = 'orange', add = TRUE, legacy.axes = TRUE)
-#par(pty = "s")
-#lines <- sapply(2:length(rocs), function(x) lines.roc(rocs[[x]], col = x))
-#dev <- dev.off()
-
-if (cart_eval)
-  plot.roc(cart_roc$rocs[[1]], type = "s",col = 'black', add = TRUE, legacy.axes = TRUE)
-
-if (bt_eval)
   plot.roc(bt_roc$rocs[[1]], type = "s", col = 'purple',add = TRUE, legacy.axes = TRUE)
+}
 
-if (knn_eval)
+if (knn_eval) {
+  knn_roc <- multiclass.roc(response = test_df$Disorder_Subclass,
+                            predictor = order(knn_pred))
   plot.roc(knn_roc$rocs[[1]], type = "s", col = 'yellow', add = TRUE, legacy.axes = TRUE)
-  
-legend("bottomright", legend = c("LDA", "LR", "NSC", "RF", "CART", "BT", "Knn"),
-       col = c("red", "green", "blue", "orange", "black", "purple", "yellow"), lwd = 2)
-title(main = "Compare ROC Curves for All Models")
+}
+
+if (lda_eval | lr_eval | nsc_eval | rf_eval | cart_eval | bt_eval | knn_eval)
+  legend("bottomright", legend = c("LDA", "LR", "NSC", "RF", "CART", "BT", "Knn"),
+         col = c("red", "green", "blue", "orange", "black", "purple", "yellow"), lwd = 2)
 ```
-
-
-### Confusion Matrix TABLE (NEEDS TO ADD THE CODES)
-
-```{r, eval = FALSE}
-models <- c("LDA", "Logistic Regression","NSC", "Random Forest", "Bagging", "KNN")
-
-Accuracy_train <- c(0.3562,0.3396, 0.3795, 1, 0.3586, 0.2265)
-
-Accuracy_test <- c(0.35, 0.35,0.27,0.38,0.37,0.226 )
-
-AUC_Score <- c(0.840, 0.810, 0.596, 0.660, 0.561, 0.494)
-
-df_results <- data.frame(models, Accuracy_train,Accuracy_test, AUC_Score )
-df_results
-
-```
-
-### Top Ten Important Predictors for the optimal model
-
-```{r, eval = FALSE}
-varimp <- varImp(ldaFit)
-plot(varimp, top = 10)
-```
-
-
-
